@@ -42,7 +42,7 @@ body {
 }
 
 a { color: var(--link); text-decoration: none; }
-a:hover { color: var(--link-dark); text-decoration: underline; }
+a:hover { color: var(--link-dark);}
 button, input, select { font: inherit; }
 button { cursor: pointer; }
 button, input, select { min-height: 44px; }

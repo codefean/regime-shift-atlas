@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore countries and their maritime zones on an interactive world map.">
+  <title>Regime Shift Atlas</title>
+
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://tile.openstreetmap.org">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Regime Shift Atlas home">
+      <span>
+        <strong>Regime Shift Atlas</strong>
+        <small>Assess Ecosystems Change by Country</small>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a class="active" href="#world-map" data-nav-section="world-map">
+        <span class="nav-label-full">World map</span><span class="nav-label-short" aria-hidden="true">Map</span>
+      </a>
+      <a href="#about" data-nav-section="about">
+        <span class="nav-label-full">About Regime Shifts</span><span class="nav-label-short" aria-hidden="true">About</span>
+      </a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="intro-shell">
+      <div class="intro-copy">
+        <p class="eyebrow">Stockholm Resilience Centre</p>
+        <h1>Explore how countries ecosystems are shifting</h1>
+        <p class="lede">
+          Select a country to learn about the regime shifts occurring within its borders.
+        </p>
+      </div>
+
+
+    </section>
+
+    <section id="world-map" class="map-shell" aria-labelledby="map-title">
+      <div class="map-toolbar">
+        <div class="map-heading">
+          <p class="section-kicker">World map</p>
+          <h2 id="map-title">Regime Shift Explorer</h2>
+        </div>
+        <div id="map-status" class="map-status" aria-live="polite">Loading data &amp; zones…</div>
+        <div class="search-panel">
+          <div class="search-row">
+            <input
+              id="country-search"
+              type="search"
+              placeholder="Search country or territory…"
+              autocomplete="off"
+              aria-describedby="search-help"
+            >
+            <button id="search-button" type="button">Search</button>
+          </div>
+          <p id="search-help" class="field-help">Search by country or territory name.</p>
+        </div>
+      </div>
+
+      <div class="map-mobile-tools">
+        <button id="map-interaction-toggle" class="map-interaction-toggle" type="button" aria-pressed="false" hidden>Explore map</button>
+        <span class="map-touch-help">On mobile, tap a country once to select it and again to open its profile.</span>
+      </div>
+
+      <div id="map" aria-label="Interactive world map. Search or tap a country to view its regime-shift profile."></div>
+
+      <div id="mobile-country-action" class="mobile-country-action" hidden aria-live="polite">
+        <div>
+          <span class="mobile-country-action-label">Selected country</span>
+          <strong id="mobile-country-name"></strong>
+        </div>
+        <div class="mobile-country-action-buttons">
+          <button id="mobile-country-clear" class="map-action-secondary" type="button">Clear</button>
+          <button id="mobile-country-open" class="map-action-primary" type="button">Open profile</button>
+        </div>
+      </div>
+
+      <div class="map-footnote">
+        <span>Regime Shift Database | Stockholm Resilience Centre</span>
+      </div>
+    </section>
+
+    <section id="about" class="about-shell" aria-labelledby="about-title">
+      <div class="about-hero">
+        <div>
+          <p class="section-kicker">About regime shifts</p>
+          <h2 id="about-title">When an ecosystem changes into a different state</h2>
+        </div>
+        <div class="about-introduction">
+          <p class="about-lede">
+            Regime shifts are large, persistent changes in the structure and function of ecosystems.
+          </p>
+          <p>
+            These changes can alter biodiversity, ecosystem services people depend on, and human well-being. The Regime Shift Atlas brings mapped case studies together so users can explore what shifts are documented in their country.
+          </p>
+        </div>
+      </div>
+
+
+      <aside class="about-context" aria-label="Important context for interpreting the atlas">
+        <strong>Important context</strong>
+        <p>
+          The figures describe documented records in the Regime Shift Database. They are not a complete national inventory, a current-status assessment, or a country risk score. Differences between countries may partly reflect uneven research and database coverage.
+        </p>
+      </aside>
+
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Regime Shift Atlas prototype</span>
+    <span>Interaction zones: Marine Regions, Marine and land zones v4 · Tiles: OpenStreetMap contributors</span>
+  </footer>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="regime-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

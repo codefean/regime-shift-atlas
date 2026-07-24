@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Country profile and regime-shift analysis workspace.">
+  <title>Country · Regime Shift Atlas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="country-page">
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Regime Shift Atlas home">
+      <span>
+        <strong>Regime Shift Atlas</strong>
+        <small>Assess Ecosystem Change by Country</small>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a href="index.html#world-map">
+        <span class="nav-label-full">World map</span><span class="nav-label-short" aria-hidden="true">Map</span>
+      </a>
+      <a href="index.html#about">
+        <span class="nav-label-full">About Regime Shifts</span><span class="nav-label-short" aria-hidden="true">About</span>
+      </a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="country-identity" aria-labelledby="country-name">
+      <a class="back-link" href="index.html#world-map" aria-label="Return to the world map">← World map</a>
+
+      <div class="identity-grid">
+        <div class="flag-frame" id="flag-frame">
+          <img id="country-flag" alt="" hidden>
+          <span id="flag-fallback" aria-hidden="true"></span>
+        </div>
+
+        <div class="country-header-details">
+          <div class="country-title-block">
+            <p class="eyebrow">Country profile</p>
+            <h1 id="country-name">Loading country…</h1>
+            <p id="country-formal-name" class="country-formal-name"></p>
+          </div>
+
+          <div class="country-stats" aria-label="Country statistics">
+            <div class="country-stat">
+              <span class="stat-label">Country size</span>
+              <strong id="indicator-area">—</strong>
+              <span class="stat-note">Approximate land area</span>
+            </div>
+
+            <div class="country-stat">
+              <span class="stat-label">Population</span>
+              <strong id="country-population">—</strong>
+              <span id="population-year" class="stat-note">Population estimate</span>
+            </div>
+
+            <div class="country-stat">
+              <span class="stat-label">Estimated GDP</span>
+              <strong id="indicator-gdp">—</strong>
+              <span id="gdp-year" class="stat-note">GDP estimate</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<div class="article-layout">
+  <aside class="article-sidebar" aria-label="Page contents">
+    <div class="contents-card">
+      <p class="contents-title">Contents</p>
+      <a href="#overview">Overview</a>
+      <a href="#types">Shift Types</a>
+      <a href="#systems">Ecosystems &amp; drivers</a>
+      <a href="#impacts">Impacts</a>
+      <a href="#time">Timing &amp; reversibility</a>
+      <a href="#evidence">Evidence</a>
+      <a href="#case-studies">Case studies</a>
+      <a href="#references">References</a>
+    </div>
+  </aside>
+
+      <article class="country-article">
+        <section id="overview" class="article-section">
+          <div class="article-heading-row">
+            <div>
+              <p class="section-kicker">Overview</p>
+              <h2>Country brief</h2>
+            </div>
+            <span id="country-code-badge" class="code-badge">—</span>
+          </div>
+          <div class="intro-note">
+            <p id="overview-copy">Loading country and regime-shift data…</p>
+          </div>
+                    <div id="analysis-grid" class="analysis-grid" aria-live="polite"></div>
+
+        </section>
+
+
+        <section id="types" class="article-section">
+          <p class="section-kicker">Composition</p>
+          <h2>Regime shifts by type</h2>
+          <p class="section-intro">Counts and shares of mapped database case studies assigned to this country.</p>
+          <div id="type-chart" class="bar-list" aria-live="polite"></div>
+          <button id="type-toggle" class="secondary-button type-toggle" type="button" aria-controls="type-chart" aria-expanded="false" hidden>Show all</button>
+        </section>
+
+        <section id="systems" class="article-section">
+          <p class="section-kicker">Context and pressure</p>
+          <h2>Ecosystems and direct drivers</h2>
+          <div class="profile-grid">
+            <section class="data-panel" aria-labelledby="ecosystem-title">
+              <div class="panel-heading">
+                <h3 id="ecosystem-title">Ecosystems represented</h3>
+                <span id="ecosystem-coverage" class="coverage-label"></span>
+              </div>
+              <div id="ecosystem-chart" class="bar-list compact"></div>
+            </section>
+            <section class="data-panel" aria-labelledby="driver-title">
+              <div class="panel-heading">
+                <h3 id="driver-title">Most recorded direct drivers</h3>
+                <span id="driver-coverage" class="coverage-label"></span>
+              </div>
+              <div id="driver-chart" class="bar-list compact"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="impacts" class="article-section">
+          <p class="section-kicker">Ecosystem Services</p>
+          <h2>Recorded impact profile</h2>
+          <div class="impact-grid">
+            <section class="impact-panel"><h3>Ecosystem processes</h3><div id="impact-processes" class="tag-list"></div></section>
+            <section class="impact-panel"><h3>Provisioning services</h3><div id="impact-provisioning" class="tag-list"></div></section>
+            <section class="impact-panel"><h3>Regulating services</h3><div id="impact-regulating" class="tag-list"></div></section>
+            <section class="impact-panel"><h3>Cultural services</h3><div id="impact-cultural" class="tag-list"></div></section>
+            <section class="impact-panel"><h3>Human well-being</h3><div id="impact-wellbeing" class="tag-list"></div></section>
+            <section class="impact-panel"><h3>Sustainable Development Goals</h3><div id="impact-sdgs" class="tag-list"></div></section>
+          </div>
+        </section>
+
+        <section id="time" class="article-section">
+          <p class="section-kicker">Time</p>
+          <h2>Timing and reversibility</h2>
+          <section class="data-panel timeline-panel" aria-labelledby="timeline-title">
+            <div class="panel-heading">
+              <div>
+                <h3 id="timeline-title">Reported shift years by decade</h3>
+                <p id="timeline-status" class="panel-note"></p>
+              </div>
+            </div>
+            <div id="timeline-chart" class="timeline-chart"></div>
+          </section>
+          <div class="profile-grid">
+            <section class="data-panel" aria-labelledby="timescale-title">
+              <div class="panel-heading"><h3 id="timescale-title">Time scale</h3><span id="timescale-coverage" class="coverage-label"></span></div>
+              <div id="timescale-chart" class="bar-list compact"></div>
+            </section>
+            <section class="data-panel" aria-labelledby="reversibility-title">
+              <div class="panel-heading"><h3 id="reversibility-title">Reversibility</h3><span id="reversibility-coverage" class="coverage-label"></span></div>
+              <div id="reversibility-chart" class="bar-list compact"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="evidence" class="article-section">
+          <p class="section-kicker">Evidence</p>
+          <h2>Strength and sources of evidence</h2>
+          <div class="profile-grid evidence-grid">
+            <section class="data-panel" aria-labelledby="existence-title">
+              <div class="panel-heading"><h3 id="existence-title">Confidence that the shift exists</h3><span id="existence-coverage" class="coverage-label"></span></div>
+              <div id="existence-chart" class="bar-list compact"></div>
+            </section>
+            <section class="data-panel" aria-labelledby="mechanism-title">
+              <div class="panel-heading"><h3 id="mechanism-title">Confidence in the mechanism</h3><span id="mechanism-coverage" class="coverage-label"></span></div>
+              <div id="mechanism-chart" class="bar-list compact"></div>
+            </section>
+          </div>
+          <section class="data-panel evidence-sources-panel" aria-labelledby="sources-title">
+            <div class="panel-heading"><h3 id="sources-title">Sources of evidence</h3><span id="sources-coverage" class="coverage-label"></span></div>
+            <div id="evidence-source-chart" class="bar-list compact"></div>
+          </section>
+        </section>
+
+        <section id="case-studies" class="article-section">
+          <p class="section-kicker">Explore records</p>
+          <h2>Mapped case studies</h2>
+          <div class="case-toolbar">
+            <label>
+              <span>Search case studies</span>
+              <input id="case-search" type="search" placeholder="Search name, place, ecosystem or driver…">
+            </label>
+            <label>
+              <span>Regime-shift type</span>
+              <select id="case-type-filter"><option value="">All types</option></select>
+            </label>
+          </div>
+          <p id="case-results-status" class="case-results-status" aria-live="polite"></p>
+          <div id="case-study-list" class="case-study-list"></div>
+          <button id="show-more-cases" class="secondary-button" type="button" hidden>Show more case studies</button>
+                    <aside class="method-note" aria-label="How to interpret these figures">
+            <strong>How to interpret these figures</strong>
+            <p>
+              These figures describe mapped records in the Regime Shift Database. They are not a complete national inventory,
+              a current-status assessment, or a country risk score. Differences between countries may partly reflect uneven research and database coverage.
+            </p>
+          </aside>
+        </section>
+
+        
+
+        <section id="references" class="article-section references-section">
+        
+          <h2>References</h2>
+          <ol>
+            <li>Regime-shift records and descriptive fields: Regime Shift Database, loaded directly from the CSV at page load.</li>
+            <li>Country assignment: point-in-polygon calculation against Marine Regions, Marine and land zones Version 4 (2024), created from World EEZ Version 12.</li>
+            <li>Country profile attributes: Natural Earth, 1:110m Admin 0 Countries.</li>
+            <li>Flag images: Flagcdn, generated from available ISO alpha-2 country codes.</li>
+          </ol>
+          <p class="reference-note">The boundary layer is a reference visualization and should not be treated as a legally authoritative boundary source. Joint or overlapping sovereign footprints can assign one record to more than one country.</p>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <span>Regime Shift Atlas prototype</span>
+    <span id="footer-country-name">Country reference page</span>
+  </footer>
+
+  <script src="regime-data.js"></script>
+  <script src="country.js"></script>
+</body>
+</html>

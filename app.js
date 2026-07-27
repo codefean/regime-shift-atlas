@@ -624,7 +624,7 @@ function onEachCountry(feature, layer) {
 
     const metadata = pointResult.value || {};
     statusElement.textContent = metadata.invalidCoordinateRecords
-      ? `${metadata.validCoordinateRecords.toLocaleString()} mapped records loaded; ${metadata.invalidCoordinateRecords.toLocaleString()} rows have invalid coordinates.`
+      ? `${metadata.validCoordinateRecords.toLocaleString()} mapped records loaded - ${metadata.invalidCoordinateRecords.toLocaleString()} invalid coordinates`
       : '';
   });
 })();

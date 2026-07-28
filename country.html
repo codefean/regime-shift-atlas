@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Country profile and regime-shift analysis workspace.">
   <title>Country · Regime Shift Atlas</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://tile.openstreetmap.org">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  >
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="country-page">
@@ -12,7 +20,7 @@
     <a class="brand" href="index.html" aria-label="Regime Shift Atlas home">
       <span>
         <strong>Regime Shift Atlas</strong>
-        <small>Assess Ecosystem Change by Country</small>
+        <small>Explore Ecosystem Change by Country</small>
       </span>
     </a>
     <nav class="site-nav" aria-label="Primary navigation">
@@ -37,7 +45,6 @@
 
         <div class="country-header-details">
           <div class="country-title-block">
-            <p class="eyebrow">Country profile</p>
             <h1 id="country-name">Loading country…</h1>
             <p id="country-formal-name" class="country-formal-name"></p>
           </div>
@@ -93,6 +100,21 @@
             <p id="overview-copy">Loading country and regime-shift data…</p>
           </div>
                     <div id="analysis-grid" class="analysis-grid" aria-live="polite"></div>
+
+          <section class="country-map-panel">
+
+            <div class="country-map-mobile-tools">
+              <button id="country-map-interaction-toggle" class="map-interaction-toggle" type="button" aria-pressed="false" hidden>Explore map</button>
+              <span>On touch devices, enable map interaction before panning or zooming.</span>
+            </div>
+            <div id="country-map" aria-label="Interactive map of the selected country and its mapped regime-shift case studies."></div>
+            <div class="country-map-footnote">
+              <span class="country-map-key"><span class="country-map-key-dot" aria-hidden="true"></span><strong id="country-map-point-count">0</strong> mapped case studies</span>
+              <span>Hover a point to see its case study name. Tap a point on touch devices.</span>
+            </div>
+          </section>
+
+
 
         </section>
 
@@ -201,7 +223,7 @@
                     <aside class="method-note" aria-label="How to interpret these figures">
             <strong>How to interpret these figures</strong>
             <p>
-              These figures describe mapped records in the Regime Shift Database. They are not a complete national inventory,
+              These figures visualize mapped records in the Regime Shift Database. They are not a complete national inventory,
               a current-status assessment, or a country risk score. Differences between countries may partly reflect uneven research and database coverage.
             </p>
           </aside>
@@ -229,6 +251,11 @@
     <span id="footer-country-name">Country reference page</span>
   </footer>
 
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
   <script src="regime-data.js"></script>
   <script src="country.js"></script>
 </body>

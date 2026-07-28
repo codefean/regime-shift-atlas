@@ -191,9 +191,8 @@
 
   function zoneDescription(properties) {
     const type = String(properties.POL_TYPE || '').toLowerCase();
-    if (type.includes('overlapping')) return 'overlapping maritime claim';
-    if (type.includes('joint')) return 'joint maritime regime';
-    if (type.includes('landlocked')) return 'land boundary';
+    if (type.includes('overlapping')) return 'overlapping claim';
+    if (type.includes('joint')) return 'joint regime';
     return '';
   }
 
@@ -326,12 +325,6 @@
     const name = record.name || primaryCountryName(properties);
     const targetUrl = new URL('country.html', window.location.href);
     targetUrl.search = new URLSearchParams({ code, name }).toString();
-
-    try {
-      sessionStorage.setItem(`earth-atlas:${code}`, JSON.stringify({ code, name }));
-    } catch (error) {
-      console.warn('Country cache unavailable:', error);
-    }
 
     try {
       window.history.replaceState(

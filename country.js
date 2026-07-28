@@ -2,6 +2,7 @@
   'use strict';
 
   const COUNTRY_GEOJSON_URL = 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_110m_admin_0_countries.geojson';
+  const WORLD_BANK_API_URL = 'https://api.worldbank.org/v2';
   const BOUNDARY_GEOJSON_URL = 'data/marine-land-countries.geojson';
   const REGIME_DATABASE_URL = 'data/regime_shift_database.csv';
   const EARTH_RADIUS_METRES = 6378137;
@@ -12,7 +13,8 @@
   const params = new URLSearchParams(window.location.search);
   const requestedCode = String(params.get('code') || '').trim().toUpperCase();
   const requestedName = String(params.get('name') || '').trim();
-  
+  const COUNTRY_API_CACHE_PREFIX = 'earth-atlas-api:';
+  const COUNTRY_API_CACHE_LIFETIME = 24 * 60 * 60 * 1000;
 
   const htmlTextDecoder = document.createElement('div');
   const recordYearCache = new WeakMap();
@@ -24,8 +26,18 @@
     caseLimit: INITIAL_CASE_LIMIT,
     caseListenersReady: false,
     showAllTypes: false,
-    typeToggleReady: false
+    typeToggleReady: false,
+    countryMap: null,
+    countryMapBoundaryLayer: null,
+    countryMapPointsLayer: null,
+    countryMapInteractionReady: false
   };
+
+  const WORLD_BANK_INDICATORS = {
+  population: 'SP.POP.TOTL',
+  gdp: 'NY.GDP.MKTP.CD',
+  area: 'AG.SRF.TOTL.K2'
+};
 
   const elements = {
     name: document.getElementById('country-name'),
@@ -41,6 +53,10 @@
     gdpYear: document.getElementById('gdp-year'),
     footerName: document.getElementById('footer-country-name'),
     analysisGrid: document.getElementById('analysis-grid'),
+    countryMap: document.getElementById('country-map'),
+    countryMapStatus: document.getElementById('country-map-status'),
+    countryMapPointCount: document.getElementById('country-map-point-count'),
+    countryMapInteractionToggle: document.getElementById('country-map-interaction-toggle'),
     typeChart: document.getElementById('type-chart'),
     typeToggle: document.getElementById('type-toggle'),
     ecosystemChart: document.getElementById('ecosystem-chart'),
@@ -71,6 +87,13 @@
     caseStudyList: document.getElementById('case-study-list'),
     showMoreCases: document.getElementById('show-more-cases')
   };
+
+  const TILE_WORLD_BOUNDS = L.latLngBounds(
+  [-85.05112878, -180],
+  [85.05112878, 180]
+);
+
+
 
   const contentsLinks = [...document.querySelectorAll('.contents-card a[href^="#"]')];
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -121,16 +144,31 @@
 
   initialiseContentsNavigation();
 
-  function getCachedCountry() {
-    if (!requestedCode) return null;
-    try {
-      const stored = sessionStorage.getItem(`earth-atlas:${requestedCode}`);
-      return stored ? JSON.parse(stored) : null;
-    } catch (error) {
-      console.warn('Country cache unavailable:', error);
-      return null;
-    }
+function getCachedCountry() {
+  if (!requestedCode) return null;
+
+  try {
+    const stored = sessionStorage.getItem(
+      `${COUNTRY_API_CACHE_PREFIX}${requestedCode}`
+    );
+
+    if (!stored) return null;
+
+    const entry = JSON.parse(stored);
+
+    if (!entry?.data) return null;
+
+    return {
+      data: entry.data,
+      expired:
+        !entry.cachedAt ||
+        Date.now() - entry.cachedAt > COUNTRY_API_CACHE_LIFETIME
+    };
+  } catch (error) {
+    console.warn('Country API cache unavailable:', error);
+    return null;
   }
+}
 
   function normalize(text) {
     return String(text || '')
@@ -187,7 +225,7 @@
   function formatGdp(value) {
     const parsed = finiteNumber(value);
     if (parsed === null || parsed < 0) return 'Unavailable';
-    return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(parsed)}M USD`;
+    return `$${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(parsed)}M`;
   }
 
   function formatArea(squareMetres) {
@@ -752,9 +790,187 @@
     updateCaseExplorer();
   }
 
-  function renderDashboard(summary) {
+  function tooltipContent(record) {
+    const content = document.createElement('span');
+    content.textContent = cleanDisplayText(record.name) || `Regime shift ${record.id}`;
+    return content;
+  }
+
+  function setCountryMapInteractionEnabled(enabled) {
+    if (!state.countryMap) return;
+    const isCoarsePointer = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    const shouldEnable = !isCoarsePointer || enabled;
+    const handlers = [
+      state.countryMap.dragging,
+      state.countryMap.touchZoom,
+      state.countryMap.doubleClickZoom,
+      state.countryMap.boxZoom,
+      state.countryMap.keyboard
+    ].filter(Boolean);
+
+    for (const handler of handlers) {
+      if (shouldEnable) handler.enable();
+      else handler.disable();
+    }
+
+    state.countryMap.scrollWheelZoom.disable();
+    state.countryMap.getContainer().classList.toggle('map-interaction-enabled', shouldEnable);
+
+    if (elements.countryMapInteractionToggle) {
+      elements.countryMapInteractionToggle.hidden = !isCoarsePointer;
+      elements.countryMapInteractionToggle.setAttribute('aria-pressed', String(shouldEnable));
+      elements.countryMapInteractionToggle.textContent = shouldEnable ? 'Exit map' : 'Explore map';
+    }
+  }
+
+  function showCountryMapError(message) {
+    if (!elements.countryMap) return;
+    elements.countryMap.classList.add('country-map-error');
+    elements.countryMap.textContent = message;
+    if (elements.countryMapStatus) elements.countryMapStatus.textContent = 'Map unavailable';
+  }
+
+  function renderCountryMap(summary, boundaryGeojson) {
+    if (!elements.countryMap) return;
+    if (!window.L) {
+      showCountryMapError('The interactive map library could not be loaded. Check your connection and reload the page.');
+      return;
+    }
+
+    const boundaryFeatures = window.RegimeData.countryBoundaryFeatures(boundaryGeojson, requestedCode);
+    if (!boundaryFeatures.length) {
+      showCountryMapError(`No map boundary was found for ${state.countryName}.`);
+      return;
+    }
+
+    if (!state.countryMap) {
+      state.countryMap = L.map(elements.countryMap, {
+      zoomControl: true,
+      attributionControl: true,
+      scrollWheelZoom: false,
+      minZoom: 1,
+      maxZoom: 12,
+      maxBounds: TILE_WORLD_BOUNDS,
+      maxBoundsViscosity: 1,
+      worldCopyJump: false
+      });
+
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        bounds: TILE_WORLD_BOUNDS,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(state.countryMap);
+
+      state.countryMap.createPane('countryBoundaryPane');
+      state.countryMap.getPane('countryBoundaryPane').style.zIndex = '410';
+      state.countryMap.createPane('countryRegimePointsPane');
+      state.countryMap.getPane('countryRegimePointsPane').style.zIndex = '450';
+
+      if (!state.countryMapInteractionReady && elements.countryMapInteractionToggle) {
+        elements.countryMapInteractionToggle.addEventListener('click', () => {
+          const isEnabled = elements.countryMapInteractionToggle.getAttribute('aria-pressed') === 'true';
+          setCountryMapInteractionEnabled(!isEnabled);
+        });
+        state.countryMapInteractionReady = true;
+      }
+    }
+
+    state.countryMapBoundaryLayer?.remove();
+    state.countryMapPointsLayer?.remove();
+
+    state.countryMapBoundaryLayer = L.geoJSON({
+      type: 'FeatureCollection',
+      features: boundaryFeatures
+    }, {
+      pane: 'countryBoundaryPane',
+      interactive: false,
+      style: {
+        color: '#3366cc',
+        weight: 1.4,
+        opacity: 0.95,
+        fillColor: '#3366cc',
+        fillOpacity: 0.13
+      }
+    }).addTo(state.countryMap);
+
+    
+
+   state.countryMapPointsLayer = L.layerGroup().addTo(state.countryMap);
+
+const normalPointStyle = {
+  radius: 5,
+  color: '#7a1f1f',
+  weight: 1.2,
+  opacity: 0.95,
+  fillColor: '#b32424df',
+  fillOpacity: 0.86
+};
+
+const hoverPointStyle = {
+  radius: 5,
+  color: '#202122',
+  weight: 1.5,
+  opacity: 1,
+  fillColor: '#b32424',
+  fillOpacity: 1
+};
+
+for (const record of summary.matchedPoints || []) {
+  const marker = L.circleMarker(
+    [record.latitude, record.longitude],
+    {
+      pane: 'countryRegimePointsPane',
+      ...normalPointStyle
+    }
+  );
+
+  marker.on('mouseover', () => {
+    marker.setStyle(hoverPointStyle);
+    marker.bringToFront();
+  });
+
+  marker.on('mouseout', () => {
+    marker.setStyle(normalPointStyle);
+  });
+
+  marker.bindTooltip(tooltipContent(record), {
+    className: 'case-map-tooltip',
+    direction: 'top',
+    offset: [0, -5],
+    opacity: 1,
+    sticky: true
+  });
+
+  marker.addTo(state.countryMapPointsLayer);
+}
+
+    const bounds = state.countryMapBoundaryLayer.getBounds();
+    if (bounds.isValid()) {
+      state.countryMap.fitBounds(bounds, { padding: [12, 12], maxZoom: 12 });
+    } else if (summary.matchedPoints?.length) {
+      const pointBounds = L.latLngBounds(summary.matchedPoints.map(record => [record.latitude, record.longitude]));
+      state.countryMap.fitBounds(pointBounds, { padding: [28, 28], maxZoom: 12 });
+    } else {
+      state.countryMap.setView([20, 0], 4);
+    }
+
+    const total = Number(summary.total || 0);
+    if (elements.countryMapPointCount) elements.countryMapPointCount.textContent = formatCount(total);
+    if (elements.countryMapStatus) {
+      elements.countryMapStatus.textContent = total
+        ? `${formatCount(total)} case stud${total === 1 ? 'y' : 'ies'} inside the selected boundary.`
+        : 'No mapped case studies fall inside the selected boundary.';
+    }
+
+    setCountryMapInteractionEnabled(false);
+    window.requestAnimationFrame(() => state.countryMap.invalidateSize({ pan: false }));
+  }
+
+  function renderDashboard(summary, boundaryGeojson) {
     state.summary = summary;
     renderOverview();
+    renderCountryMap(summary, boundaryGeojson);
     renderAnalysisSummary(summary);
     renderComposition(summary);
     renderSystems(summary);
@@ -773,12 +989,14 @@
         window.RegimeData.loadCsv(REGIME_DATABASE_URL)
       ]);
       if (!boundaryResponse.ok) throw new Error(`Boundary data returned ${boundaryResponse.status}`);
-      const summary = window.RegimeData.summarizeCountry(dataset.points, await boundaryResponse.json(), requestedCode);
+      const boundaryGeojson = await boundaryResponse.json();
+      const summary = window.RegimeData.summarizeCountry(dataset.points, boundaryGeojson, requestedCode);
       if (!summary.boundaryFeatureCount) throw new Error(`No boundary features were found for ${requestedCode}.`);
-      renderDashboard(summary);
+      renderDashboard(summary, boundaryGeojson);
     } catch (error) {
       console.error('Unable to calculate regime-shift statistics:', error);
       [elements.typeChart, elements.ecosystemChart, elements.driverChart, elements.timelineChart, elements.caseStudyList].forEach(container => appendEmpty(container, 'Data unavailable.'));
+      showCountryMapError('Country boundary or regime-shift data could not be loaded. Run the site through a local web server and reload.');
     }
   }
 
@@ -790,31 +1008,156 @@
     return (requestedCode && codes.includes(requestedCode)) || (requestedName && normalize(countryName(properties)) === normalize(requestedName));
   }
 
-  async function loadCountry() {
-    const cached = getCachedCountry();
-    if (cached) renderCountry(cached);
-    try {
-      const response = await fetch(COUNTRY_GEOJSON_URL);
-      if (!response.ok) throw new Error(`Country data returned ${response.status}`);
-      const geojson = await response.json();
-      const match = (geojson.features || []).find(isRequestedCountry);
-      if (!match) {
-        if (!cached) {
-          renderCountry({ name: requestedName || 'Country not found', code: requestedCode || '—' });
-          showError('The requested country could not be found in the map data. Return to the world map and select a country again.');
-        }
-        return;
-      }
-      renderCountry(toCountryData(match));
-    } catch (error) {
-      console.error('Unable to load country data:', error);
-      if (!cached) {
-        renderCountry({ name: requestedName || 'Country profile', code: requestedCode || '—' });
-        showError('Live country profile data could not be loaded. Check your internet connection and reload the page.');
-      }
+  function worldBankRows(payload) {
+  return Array.isArray(payload) && Array.isArray(payload[1])
+    ? payload[1]
+    : [];
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'application/json'
     }
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request returned ${response.status}`);
   }
 
+  return response.json();
+}
+
+async function fetchCountryFromApi(code) {
+  const countryCode = encodeURIComponent(code);
+  const indicatorCodes = Object.values(WORLD_BANK_INDICATORS).join(';');
+
+  const countryUrl =
+    `${WORLD_BANK_API_URL}/country/${countryCode}?format=json`;
+
+  const statisticsUrl =
+    `${WORLD_BANK_API_URL}/country/${countryCode}` +
+    `/indicator/${indicatorCodes}` +
+    `?source=2&format=json&mrnev=1&per_page=10`;
+
+  const [countryPayload, statisticsPayload] = await Promise.all([
+    fetchJson(countryUrl),
+    fetchJson(statisticsUrl)
+  ]);
+
+  const country = worldBankRows(countryPayload)[0];
+
+  if (!country) {
+    throw new Error(`No API country record was found for ${code}.`);
+  }
+
+  const statistics = new Map(
+    worldBankRows(statisticsPayload)
+      .filter(record => record.value !== null)
+      .map(record => [record.indicator.id, record])
+  );
+
+  const population = statistics.get(
+    WORLD_BANK_INDICATORS.population
+  );
+
+  const gdp = statistics.get(
+    WORLD_BANK_INDICATORS.gdp
+  );
+
+  const area = statistics.get(
+    WORLD_BANK_INDICATORS.area
+  );
+
+  return {
+    name: country.name || requestedName || code,
+    formalName: '',
+    code: country.id || code,
+    iso2: country.iso2Code || '',
+
+    population: population
+      ? Number(population.value)
+      : null,
+
+    populationYear: population
+      ? Number(population.date)
+      : null,
+
+    /*
+     * The World Bank returns surface area in km².
+     * Your formatArea() function expects square metres.
+     */
+    areaSquareMetres: area
+      ? Number(area.value) * 1_000_000
+      : null,
+
+    /*
+     * The World Bank returns GDP in current US dollars.
+     * Your formatGdp() function currently expects millions.
+     */
+    gdp: gdp
+      ? Number(gdp.value) / 1_000_000
+      : null,
+
+    gdpYear: gdp
+      ? Number(gdp.date)
+      : null
+  };
+}
+
+  async function loadCountry() {
+  const cachedEntry = getCachedCountry();
+  const cachedCountry = cachedEntry?.data || null;
+
+  /*
+   * Display valid cached statistics immediately.
+   * The API request below will refresh them.
+   */
+  if (cachedCountry) {
+    renderCountry(cachedCountry);
+  } else {
+    renderCountry({
+      name: requestedName || requestedCode || 'Country profile',
+      code: requestedCode || '—'
+    });
+  }
+
+  try {
+    if (!requestedCode) {
+      throw new Error('No country code was supplied.');
+    }
+
+    const country = await fetchCountryFromApi(requestedCode);
+
+    renderCountry(country);
+
+    try {
+      sessionStorage.setItem(
+        `${COUNTRY_API_CACHE_PREFIX}${requestedCode}`,
+        JSON.stringify({
+          cachedAt: Date.now(),
+          data: country
+        })
+      );
+    } catch (error) {
+      console.warn('Country API result could not be cached:', error);
+    }
+  } catch (error) {
+    console.error('Unable to refresh country API data:', error);
+
+    /*
+     * Keep showing previously cached data when the refresh fails.
+     */
+    if (cachedCountry) {
+      console.warn(`Using cached statistics for ${requestedCode}.`);
+      return;
+    }
+
+    showError(
+      'Country statistics could not be loaded. Reload the page to try again.'
+    );
+  }
+}
   loadCountry();
   loadRegimeAnalysis();
 })();

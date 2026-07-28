@@ -1083,18 +1083,12 @@ async function fetchCountryFromApi(code) {
       ? Number(population.date)
       : null,
 
-    /*
-     * The World Bank returns surface area in km².
-     * Your formatArea() function expects square metres.
-     */
+
     areaSquareMetres: area
       ? Number(area.value) * 1_000_000
       : null,
 
-    /*
-     * The World Bank returns GDP in current US dollars.
-     * Your formatGdp() function currently expects millions.
-     */
+
     gdp: gdp
       ? Number(gdp.value) / 1_000_000
       : null,
@@ -1109,10 +1103,6 @@ async function fetchCountryFromApi(code) {
   const cachedEntry = getCachedCountry();
   const cachedCountry = cachedEntry?.data || null;
 
-  /*
-   * Display valid cached statistics immediately.
-   * The API request below will refresh them.
-   */
   if (cachedCountry) {
     renderCountry(cachedCountry);
   } else {
@@ -1145,9 +1135,6 @@ async function fetchCountryFromApi(code) {
   } catch (error) {
     console.error('Unable to refresh country API data:', error);
 
-    /*
-     * Keep showing previously cached data when the refresh fails.
-     */
     if (cachedCountry) {
       console.warn(`Using cached statistics for ${requestedCode}.`);
       return;

@@ -498,7 +498,6 @@ function getCachedCountry() {
     appendAnalysisCard('Shift types', formatCount(types.length), 'Distinct regime-shift categories present.');
        appendAnalysisCard('Ecosystems represented', formatCount(ecosystems.entries.length), topEcosystem ? `Most common: ${topEcosystem.label} · ${formatCount(topEcosystem.count)} records.`: 'No ecosystem data is recorded.');
     appendAnalysisCard('Most documented shift', topType ? topType.type : 'None', topType ? `${formatCount(topType.count)} records · ${formatPercent(topType.count, total)} of mapped cases.` : 'No category is present.');
-    appendAnalysisCard('Evidence coverage', formatPercent(evidenceAssessed, total), coverageLabel(evidenceAssessed, total));
 
   }
 

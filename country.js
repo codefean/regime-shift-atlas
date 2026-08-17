@@ -1097,26 +1097,89 @@ async function fetchCountryFromApi(code) {
       : null
   };
 }
+async function fetchCountryFallback() {
+  const response = await fetch(COUNTRY_GEOJSON_URL);
 
+  if (!response.ok) {
+    throw new Error(`Country GeoJSON returned ${response.status}`);
+  }
+
+  const geojson = await response.json();
+  const feature = geojson.features.find(isRequestedCountry);
+
+  if (!feature) {
+    throw new Error(`No Natural Earth record found for ${requestedCode}.`);
+  }
+
+  return toCountryData(feature);
+}
   async function loadCountry() {
   const cachedEntry = getCachedCountry();
   const cachedCountry = cachedEntry?.data || null;
 
+  let fallbackCountry = null;
+
+  // 1. Render cache immediately if available
   if (cachedCountry) {
     renderCountry(cachedCountry);
   } else {
-    renderCountry({
-      name: requestedName || requestedCode || 'Country profile',
-      code: requestedCode || '—'
-    });
+    // 2. Otherwise use Natural Earth immediately
+    try {
+      fallbackCountry = await fetchCountryFallback();
+      renderCountry(fallbackCountry);
+    } catch (error) {
+      console.warn('Natural Earth fallback unavailable:', error);
+
+      renderCountry({
+        name: requestedName || requestedCode || 'Country profile',
+        code: requestedCode || '—'
+      });
+    }
   }
 
+  // 3. Try to improve/refresh it with World Bank data
   try {
     if (!requestedCode) {
       throw new Error('No country code was supplied.');
     }
 
-    const country = await fetchCountryFromApi(requestedCode);
+    const apiCountry = await fetchCountryFromApi(requestedCode);
+
+    // Keep fallback values if the API is missing a particular field
+    const country = {
+      ...(fallbackCountry || cachedCountry || {}),
+      ...apiCountry,
+
+      population:
+        apiCountry.population ??
+        fallbackCountry?.population ??
+        cachedCountry?.population ??
+        null,
+
+      populationYear:
+        apiCountry.populationYear ??
+        fallbackCountry?.populationYear ??
+        cachedCountry?.populationYear ??
+        null,
+
+      gdp:
+        apiCountry.gdp ??
+        fallbackCountry?.gdp ??
+        cachedCountry?.gdp ??
+        null,
+
+      gdpYear:
+        apiCountry.gdpYear ??
+        fallbackCountry?.gdpYear ??
+        cachedCountry?.gdpYear ??
+        null,
+
+      areaSquareMetres:
+        apiCountry.areaSquareMetres ??
+        fallbackCountry?.areaSquareMetres ??
+        cachedCountry?.areaSquareMetres ??
+        null
+    };
 
     renderCountry(country);
 
@@ -1131,19 +1194,20 @@ async function fetchCountryFromApi(code) {
     } catch (error) {
       console.warn('Country API result could not be cached:', error);
     }
+
   } catch (error) {
-    console.error('Unable to refresh country API data:', error);
+    console.warn('World Bank statistics unavailable:', error);
 
-    if (cachedCountry) {
-      console.warn(`Using cached statistics for ${requestedCode}.`);
-      return;
+    // This is no longer fatal, because Natural Earth/cache
+    // should already be displayed.
+    if (!fallbackCountry && !cachedCountry) {
+      showError(
+        'Some country statistics could not be loaded.'
+      );
     }
-
-    showError(
-      'Country statistics could not be loaded. Reload the page to try again.'
-    );
   }
 }
   loadCountry();
   loadRegimeAnalysis();
 })();
+

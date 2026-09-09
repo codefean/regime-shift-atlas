@@ -18,32 +18,14 @@
 </head>
 <body class="atlas-embed-page">
   <main>
-    <section id="world-map" class="map-shell" aria-labelledby="map-title">
-      <div class="map-toolbar">
-        <div class="map-heading">
-          <h2 id="map-title">Regime Shift Explorer</h2>
-        </div>
-        
-        <div class="search-panel">
-          <div class="search-row">
-            <input
-              id="country-search"
-              type="search"
-              placeholder="Search country or territory…"
-              autocomplete="off"
-              aria-describedby="search-help"
-            >
-            <button id="search-button" type="button">Search</button>
-          </div>
-        </div>
-      </div>
+    <section id="world-map" class="map-shell">
 
       <div class="map-mobile-tools">
         <button id="map-interaction-toggle" class="map-interaction-toggle" type="button" aria-pressed="false" hidden>Explore map</button>
         <span class="map-touch-help">On mobile, tap a country once to select it and again to open its profile.</span>
       </div>
 
-      <div id="map" aria-label="Interactive world map. Search or tap a country to view its regime-shift profile."></div>
+      <div id="map" aria-label="Interactive world map. Hover or tap a country to view its regime-shift profile."></div>
 
       <div id="mobile-country-action" class="mobile-country-action" hidden aria-live="polite">
         <div>
@@ -57,8 +39,7 @@
       </div>
 
       <div class="map-footnote">
-        <span>Regime Shift Database | Stockholm Resilience Centre</span><div id="map-status" class="map-status" aria-live="polite">Loading data &amp; zones…</div>
-      </div>
+        <span>Regime Shift Database | Stockholm Resilience Centre</span>
     </section>
 
   </main>

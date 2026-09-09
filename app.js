@@ -160,7 +160,11 @@
 
   map.createPane('regimePointsPane');
   map.getPane('regimePointsPane').style.zIndex = '450';
-  map.getPane('regimePointsPane').style.pointerEvents = 'auto';
+  map.getPane('regimePointsPane').style.pointerEvents = 'none';
+
+  map.createPane('countryBoundaryPane');
+  map.getPane('countryBoundaryPane').style.zIndex = '500';
+  map.getPane('countryBoundaryPane').style.pointerEvents = 'auto';
 
   let countriesLayer;
   let regimePointsLayer;
@@ -487,6 +491,7 @@ function onEachCountry(feature, layer) {
       for (const feature of geojson.features || []) indexFeature(feature);
 
       countriesLayer = L.geoJSON(geojson, {
+        pane: 'countryBoundaryPane',
         style: styleFeature,
         onEachFeature: onEachCountry
       }).addTo(map);
@@ -508,19 +513,19 @@ function onEachCountry(feature, layer) {
 
     regimePointsLayer = L.geoJSON(geojson, {
       pane: 'regimePointsPane',
-      interactive: true,
+      interactive: false,
       pointToLayer(feature, latlng) {
         return L.circleMarker(latlng, {
           pane: 'regimePointsPane',
           renderer,
-          interactive: true,
+          interactive: false,
           radius: 2.6,
           color: '#234f3b',
           weight: 0.6,
           opacity: 0.8,
           fillColor: '#2f6b4f',
           fillOpacity: 0.72
-        }).bindPopup(regimePointPopup(feature.properties || {}));
+        });
       }
     }).addTo(map);
 
@@ -592,6 +597,8 @@ function onEachCountry(feature, layer) {
   }
 
   function searchCountry() {
+    if (!searchInput) return;
+
     const query = normalize(searchInput.value);
     if (!query) {
       statusElement.textContent = 'Enter a country or territory name to search.';
@@ -655,8 +662,8 @@ function onEachCountry(feature, layer) {
     }
   });
 
-  searchButton.addEventListener('click', searchCountry);
-  searchInput.addEventListener('keydown', event => {
+  searchButton?.addEventListener('click', searchCountry);
+  searchInput?.addEventListener('keydown', event => {
     if (event.key === 'Enter') searchCountry();
   });
 

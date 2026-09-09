@@ -6,7 +6,7 @@ The main `index.html` file is embed-only: it does not include its own site heade
 
 ## Included
 
-- `index.html` - embed-only Leaflet world map with country search, country click-through, and clickable regime-shift case-study points.
+- `index.html` - embed-only Leaflet world map with country hover/highlight, country click-through, and visible regime-shift case-study points.
 - `app.js` - world-map controller.
 - `country.html` - country profile page.
 - `country.js` - country-profile controller.
@@ -79,6 +79,8 @@ When a user clicks a country, `index.html` opens:
 
     country.html?code=ISO3&name=Country%20Name
 
-When a user clicks a case-study point, the popup title and `Read more` button link to `case_url`. The regime-shift type links to `regime_shift_url`.
+The main map works like the Mapbox version: hover highlights the country or marine boundary, then click the country to open/select its profile. Regime-shift points are visible on the main map but do not capture hover or click events there.
+
+On the country profile page, point popups remain clickable. The popup title and `Read more` button link to `case_url`. The regime-shift type links to `regime_shift_url`.
 
 By default, popup links use `linkTarget: "_top"` so RSDB case pages open in the parent browser window rather than inside the iframe.

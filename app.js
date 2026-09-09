@@ -1,8 +1,11 @@
 (() => {
   'use strict';
 
-  const GEOJSON_URL = 'data/marine-land-countries.geojson';
-  const REGIME_DATABASE_URL = 'data/regime_shift_database.csv';
+  const ATLAS_CONFIG = window.RSDB_ATLAS_CONFIG || {};
+  const GEOJSON_URL = ATLAS_CONFIG.boundaryDataUrl || 'data/marine-land-countries.geojson';
+  const REGIME_DATABASE_URL = ATLAS_CONFIG.regimeDataUrl || 'data/regime_shift_database.csv';
+  const COUNTRY_PAGE_URL = ATLAS_CONFIG.countryPageUrl || 'country.html';
+  const LINK_TARGET = ATLAS_CONFIG.linkTarget || '_top';
   const statusElement = document.getElementById('map-status');
   const searchInput = document.getElementById('country-search');
   const searchButton = document.getElementById('search-button');
@@ -20,11 +23,21 @@
   let mapInteractionEnabled = !mobileMapMode;
   let selectedMobileCountry = null;
 
+  document.getElementById('rsdb-home-link')?.setAttribute(
+    'href',
+    ATLAS_CONFIG.rsdbHomeUrl || '../../index.html'
+  );
+
+  document.getElementById('rsdb-regime-shifts-link')?.setAttribute(
+    'href',
+    ATLAS_CONFIG.rsdbRegimeShiftsUrl || '../../regime_shifts.html'
+  );
+
   const defaultStyle = {
-    color: '#71808d',
+    color: '#6f8177',
     weight: 0.7,
     opacity: 0.9,
-    fillColor: '#cfe0ef',
+    fillColor: '#d7e6dc',
     fillOpacity: 0.17
   };
 
@@ -38,10 +51,10 @@
   };
 
   const hoverStyle = {
-    color: '#1f4c99df',
+    color: '#234f3b',
     weight: 1.6,
     opacity: 1,
-    fillColor: '#3366cc',
+    fillColor: '#2f6b4f',
     fillOpacity: 0.38
   };
 
@@ -147,7 +160,7 @@
 
   map.createPane('regimePointsPane');
   map.getPane('regimePointsPane').style.zIndex = '450';
-  map.getPane('regimePointsPane').style.pointerEvents = 'none';
+  map.getPane('regimePointsPane').style.pointerEvents = 'auto';
 
   let countriesLayer;
   let regimePointsLayer;
@@ -323,7 +336,7 @@
 
     const record = countryRecord(code, properties);
     const name = record.name || primaryCountryName(properties);
-    const targetUrl = new URL('country.html', window.location.href);
+    const targetUrl = new URL(COUNTRY_PAGE_URL, window.location.href);
     targetUrl.search = new URLSearchParams({ code, name }).toString();
 
     try {
@@ -495,23 +508,79 @@ function onEachCountry(feature, layer) {
 
     regimePointsLayer = L.geoJSON(geojson, {
       pane: 'regimePointsPane',
-      interactive: false,
+      interactive: true,
       pointToLayer(feature, latlng) {
         return L.circleMarker(latlng, {
           pane: 'regimePointsPane',
           renderer,
-          interactive: false,
+          interactive: true,
           radius: 2.6,
-          color: '#7a1f1f',
+          color: '#234f3b',
           weight: 0.6,
           opacity: 0.8,
-          fillColor: '#b32424',
+          fillColor: '#2f6b4f',
           fillOpacity: 0.72
-        });
+        }).bindPopup(regimePointPopup(feature.properties || {}));
       }
     }).addTo(map);
 
     return dataset.metadata;
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function safeHref(value) {
+    const href = String(value || '').trim();
+    if (!href) return '';
+    if (/^(https?:)?\/\//i.test(href)) return href;
+    if (/^(\.?\.?\/|#)/.test(href)) return href;
+    return '';
+  }
+
+  function popupLink(value, href) {
+    const text = escapeHTML(value);
+    const safeUrl = safeHref(href);
+    if (!text) return '';
+    return safeUrl ? `<a href="${escapeHTML(safeUrl)}" target="${escapeHTML(LINK_TARGET)}">${text}</a>` : text;
+  }
+
+  function popupRow(label, value, options = {}) {
+    const text = options.html ? String(value || '') : escapeHTML(value);
+    if (!text) return '';
+    return `<div class="regime-popup-row"><span class="regime-popup-label">${escapeHTML(label)}:</span> ${text}</div>`;
+  }
+
+  function readMoreLink(href) {
+    const safeUrl = safeHref(href);
+    if (!safeUrl) return '';
+    return `<a class="regime-popup-read-more" href="${escapeHTML(safeUrl)}" target="${escapeHTML(LINK_TARGET)}">Read more</a>`;
+  }
+
+  function regimePointPopup(properties) {
+    const caseUrl = properties.case_url || properties.links;
+    const typeUrl = properties.regime_shift_url || properties.link_rs;
+    const typeValue = String(properties.type || '').toLowerCase() === 'unclassified'
+      ? (properties.regime_shift_type_other || properties.type)
+      : properties.type;
+
+    return `
+      <div class="regime-popup">
+        <div class="regime-popup-title">
+          ${popupLink(properties.case_study_name || properties.name || 'Regime shift', caseUrl)}
+        </div>
+        ${popupRow('Type', popupLink(typeValue, typeUrl), { html: true })}
+        ${popupRow('Ecosystem', properties.ecosystem_type || properties.ecosystem)}
+        ${popupRow('Countries', properties.location_countries || properties.source_countries)}
+        ${readMoreLink(caseUrl)}
+      </div>
+    `;
   }
 
   function normalize(text) {

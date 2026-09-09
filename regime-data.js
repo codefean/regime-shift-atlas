@@ -36,7 +36,11 @@
     'impacts_on_ecosystem_services_and_human_well_being',
     'references',
     'reference_links',
-    'doi'
+    'doi',
+    'links',
+    'link_rs',
+    'case_url',
+    'regime_shift_url'
   ];
 
   const SELECTED_COLUMNS = [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS];
@@ -155,6 +159,8 @@
             references: cleanText(value('references')),
             referenceLinks: cleanText(value('reference_links')),
             doi: cleanText(value('doi')),
+            caseUrl: cleanText(value('case_url')) || cleanText(value('links')),
+            regimeShiftUrl: cleanText(value('regime_shift_url')) || cleanText(value('link_rs')),
             longitude,
             latitude
           });
@@ -227,9 +233,17 @@
           id: point.id,
           name: point.name,
           type: point.type,
+          case_study_name: point.name,
+          regime_shift_type_other: point.type === 'Unclassified' ? point.type : '',
+          long: point.longitude,
+          lat: point.latitude,
           ...(point.ecosystem ? { ecosystem: point.ecosystem } : {}),
+          ...(point.ecosystem ? { ecosystem_type: point.ecosystem } : {}),
           ...(point.region ? { region: point.region } : {}),
-          ...(point.sourceCountries ? { source_countries: point.sourceCountries } : {})
+          ...(point.sourceCountries ? { source_countries: point.sourceCountries } : {}),
+          ...(point.sourceCountries ? { location_countries: point.sourceCountries } : {}),
+          ...(point.caseUrl ? { case_url: point.caseUrl } : {}),
+          ...(point.regimeShiftUrl ? { regime_shift_url: point.regimeShiftUrl } : {})
         },
         geometry: {
           type: 'Point',

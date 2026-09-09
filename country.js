@@ -1,10 +1,11 @@
 (() => {
   'use strict';
 
-  const COUNTRY_GEOJSON_URL = 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_110m_admin_0_countries.geojson';
-  const WORLD_BANK_API_URL = 'https://api.worldbank.org/v2';
-  const BOUNDARY_GEOJSON_URL = 'data/marine-land-countries.geojson';
-  const REGIME_DATABASE_URL = 'data/regime_shift_database.csv';
+  const ATLAS_CONFIG = window.RSDB_ATLAS_CONFIG || {};
+  const COUNTRY_GEOJSON_URL = ATLAS_CONFIG.countryGeojsonUrl || 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_110m_admin_0_countries.geojson';
+  const WORLD_BANK_API_URL = ATLAS_CONFIG.worldBankApiUrl || 'https://api.worldbank.org/v2';
+  const BOUNDARY_GEOJSON_URL = ATLAS_CONFIG.boundaryDataUrl || 'data/marine-land-countries.geojson';
+  const REGIME_DATABASE_URL = ATLAS_CONFIG.regimeDataUrl || 'data/regime_shift_database.csv';
   const EARTH_RADIUS_METRES = 6378137;
   const INITIAL_CASE_LIMIT = 6;
   const CASE_PAGE_SIZE = 6;
@@ -32,6 +33,11 @@
     countryMapPointsLayer: null,
     countryMapInteractionReady: false
   };
+
+  document.getElementById('country-rsdb-home-link')?.setAttribute(
+    'href',
+    ATLAS_CONFIG.rsdbHomeUrl || '../../index.html'
+  );
 
   const WORLD_BANK_INDICATORS = {
   population: 'SP.POP.TOTL',
@@ -622,10 +628,13 @@ function getCachedCountry() {
       let clean = String(url || '').trim().replace(/[),.;]+$/, '');
       if (!clean) return;
       if (/^10\.\d{4,9}\//i.test(clean)) clean = `https://doi.org/${clean}`;
-      if (!/^https?:\/\//i.test(clean) || seen.has(clean)) return;
+      const isAllowedUrl = /^https?:\/\//i.test(clean) || /^(\.?\.?\/|#)/.test(clean);
+      if (!isAllowedUrl || seen.has(clean)) return;
       seen.add(clean);
       links.push({ url: clean, label });
     }
+    add(record.caseUrl, 'RSDB case page');
+    add(record.regimeShiftUrl, 'RSDB regime-shift page');
     const linkText = cleanDisplayText(record.referenceLinks);
     const matches = linkText.match(/https?:\/\/[^\s<>"]+/gi) || [];
     matches.forEach((url, index) => add(url, `Source ${index + 1}`));
@@ -674,6 +683,13 @@ function getCachedCountry() {
     details.className = 'case-card';
     titleBlock.className = 'case-summary-copy';
     title.textContent = record.name || 'Unnamed case study';
+    const caseUrl = cleanDisplayText(record.caseUrl);
+    if (caseUrl) {
+      const caseLink = document.createElement('a');
+      caseLink.href = caseUrl;
+      caseLink.textContent = title.textContent;
+      title.replaceChildren(caseLink);
+    }
     const year = recordYear(record);
     subtitle.textContent = [record.type, record.ecosystem, year || cleanDisplayText(record.yearOrDuration)].filter(Boolean).join(' · ');
     titleBlock.append(title, subtitle);
@@ -885,10 +901,10 @@ function getCachedCountry() {
       pane: 'countryBoundaryPane',
       interactive: false,
       style: {
-        color: '#3366cc',
+        color: '#2f6b4f',
         weight: 1.4,
         opacity: 0.95,
-        fillColor: '#3366cc',
+        fillColor: '#2f6b4f',
         fillOpacity: 0.13
       }
     }).addTo(state.countryMap);
@@ -899,10 +915,10 @@ function getCachedCountry() {
 
 const normalPointStyle = {
   radius: 5,
-  color: '#7a1f1f',
+  color: '#234f3b',
   weight: 1.2,
   opacity: 0.95,
-  fillColor: '#b32424df',
+  fillColor: '#2f6b4f',
   fillOpacity: 0.86
 };
 
@@ -911,7 +927,7 @@ const hoverPointStyle = {
   color: '#202122',
   weight: 1.5,
   opacity: 1,
-  fillColor: '#b32424',
+  fillColor: '#35795a',
   fillOpacity: 1
 };
 
@@ -1210,4 +1226,3 @@ async function fetchCountryFallback() {
   loadCountry();
   loadRegimeAnalysis();
 })();
-

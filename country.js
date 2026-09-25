@@ -104,24 +104,42 @@
   const contentsLinks = [...document.querySelectorAll('.contents-card a[href^="#"]')];
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function setActiveContents(sectionId, bringIntoView = false) {
-    for (const link of contentsLinks) {
-      const isActive = link.hash === `#${sectionId}`;
-      link.classList.toggle('active', isActive);
-      if (isActive) {
-        link.setAttribute('aria-current', 'location');
-        if (bringIntoView) {
-          link.scrollIntoView({
-            behavior: prefersReducedMotion ? 'auto' : 'smooth',
-            block: 'nearest',
-            inline: 'center'
+function setActiveContents(sectionId, bringIntoView = false) {
+  for (const link of contentsLinks) {
+    const isActive = link.hash === `#${sectionId}`;
+
+    link.classList.toggle('active', isActive);
+
+    if (isActive) {
+      link.setAttribute('aria-current', 'location');
+
+      if (bringIntoView) {
+        const scroller = link.closest('.article-sidebar');
+
+        if (
+          scroller &&
+          window.matchMedia('(max-width: 860px)').matches &&
+          scroller.scrollWidth > scroller.clientWidth
+        ) {
+          const scrollerRect = scroller.getBoundingClientRect();
+          const linkRect = link.getBoundingClientRect();
+
+          const targetLeft =
+            scroller.scrollLeft +
+            (linkRect.left - scrollerRect.left) -
+            (scroller.clientWidth - linkRect.width) / 2;
+
+          scroller.scrollTo({
+            left: Math.max(0, targetLeft),
+            behavior: prefersReducedMotion ? 'auto' : 'smooth'
           });
         }
-      } else {
-        link.removeAttribute('aria-current');
       }
+    } else {
+      link.removeAttribute('aria-current');
     }
   }
+}
 
   function initialiseContentsNavigation() {
     if (!contentsLinks.length) return;
@@ -426,12 +444,15 @@ function getCachedCountry() {
       const fill = document.createElement('div');
       row.className = 'bar-row';
       header.className = 'bar-row-header';
-      label.textContent = entry.label || entry.type || 'Unclassified';
+      const labelText = entry.label || entry.type || 'Unclassified';
+      label.textContent = labelText;
       const share = denominator ? ` · ${formatPercent(entry.count, denominator)}` : '';
       value.textContent = `${formatCount(entry.count)}${options.showShare === false ? '' : share}`;
       track.className = 'bar-track';
       fill.className = 'bar-fill';
       fill.style.width = `${Math.max(3, (entry.count / max) * 100)}%`;
+      const fillColor = entry.color || options.colorForLabel?.(labelText);
+      if (fillColor) fill.style.background = fillColor;
       track.appendChild(fill);
       header.append(label, value);
       row.append(header, track);
@@ -499,17 +520,26 @@ function getCachedCountry() {
     const ecosystems = countField(summary.matchedPoints, 'ecosystem');
     const topEcosystem = ecosystems.entries[0] || null;
     const evidenceAssessed = summary.matchedPoints.filter(record => record.evidenceSources || record.confidenceExistence || record.confidenceMechanism).length;
+    const drivers = countField(summary.matchedPoints, 'keyDirectDrivers');
+    const topDriver = drivers.entries[0] || null;
     elements.analysisGrid?.replaceChildren();
+        appendAnalysisCard('Most documented shift', topType ? topType.type : 'None', topType ? `${formatCount(topType.count)} records · ${formatPercent(topType.count, total)} of mapped cases.` : 'No category is present.');
+    appendAnalysisCard( 'Most common direct driver', topDriver ? topDriver.label : 'None',topDriver
+    ? ``
+    : 'No direct-driver data is recorded.');
     appendAnalysisCard('Mapped case studies', formatCount(total), 'Unique cases within the selected boundary footprint.');
     appendAnalysisCard('Shift types', formatCount(types.length), 'Distinct regime-shift categories present.');
-       appendAnalysisCard('Ecosystems represented', formatCount(ecosystems.entries.length), topEcosystem ? `Most common: ${topEcosystem.label} · ${formatCount(topEcosystem.count)} records.`: 'No ecosystem data is recorded.');
-    appendAnalysisCard('Most documented shift', topType ? topType.type : 'None', topType ? `${formatCount(topType.count)} records · ${formatPercent(topType.count, total)} of mapped cases.` : 'No category is present.');
+    appendAnalysisCard('Ecosystems represented', formatCount(ecosystems.entries.length), topEcosystem ? `Most common: ${topEcosystem.label} · ${formatCount(topEcosystem.count)} records.`: 'No ecosystem data is recorded.');
 
   }
 
   function renderComposition(summary) {
     const total = Number(summary.total || 0);
-    const entries = (summary.types || []).map(entry => ({ label: entry.type, count: entry.count }));
+    const entries = (summary.types || []).map(entry => ({
+      label: entry.type,
+      count: entry.count,
+      color: window.RegimeData?.regimeTypeColor(entry.type)
+    }));
     const visibleLimit = state.showAllTypes ? entries.length : INITIAL_TYPE_LIMIT;
 
     renderBarList(elements.typeChart, entries, total, {
@@ -901,10 +931,10 @@ function getCachedCountry() {
       pane: 'countryBoundaryPane',
       interactive: false,
       style: {
-        color: '#2f6b4f',
+        color: '#3366cc',
         weight: 1.4,
         opacity: 0.95,
-        fillColor: '#2f6b4f',
+        fillColor: '#3366cc',
         fillOpacity: 0.13
       }
     }).addTo(state.countryMap);
@@ -913,25 +943,25 @@ function getCachedCountry() {
 
    state.countryMapPointsLayer = L.layerGroup().addTo(state.countryMap);
 
-const normalPointStyle = {
-  radius: 5,
-  color: '#234f3b',
-  weight: 1.2,
-  opacity: 0.95,
-  fillColor: '#2f6b4f',
-  fillOpacity: 0.86
-};
-
-const hoverPointStyle = {
-  radius: 5,
-  color: '#202122',
-  weight: 1.5,
-  opacity: 1,
-  fillColor: '#35795a',
-  fillOpacity: 1
-};
-
 for (const record of summary.matchedPoints || []) {
+  const typeColor = window.RegimeData?.regimeTypeColor(record.canonicalType || record.type) || '#4a5878';
+  const normalPointStyle = {
+    radius: 5,
+    color: '#ffffff',
+    weight: 1.2,
+    opacity: 0.95,
+    fillColor: typeColor,
+    fillOpacity: 0.9
+  };
+  const hoverPointStyle = {
+    radius: 6,
+    color: '#202122',
+    weight: 1.5,
+    opacity: 1,
+    fillColor: typeColor,
+    fillOpacity: 1
+  };
+
   const marker = L.circleMarker(
     [record.latitude, record.longitude],
     {
@@ -972,12 +1002,6 @@ for (const record of summary.matchedPoints || []) {
 
     const total = Number(summary.total || 0);
     if (elements.countryMapPointCount) elements.countryMapPointCount.textContent = formatCount(total);
-    if (elements.countryMapStatus) {
-      elements.countryMapStatus.textContent = total
-        ? `${formatCount(total)} case stud${total === 1 ? 'y' : 'ies'} inside the selected boundary.`
-        : 'No mapped case studies fall inside the selected boundary.';
-    }
-
     setCountryMapInteractionEnabled(false);
     window.requestAnimationFrame(() => state.countryMap.invalidateSize({ pan: false }));
   }

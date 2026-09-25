@@ -1,0 +1,195 @@
+
+#regime-type-control {
+  position: absolute;
+  top: 72px;
+  left: 12px;
+  z-index: 1250;
+  width: min(190px, calc(100vw - 30px));
+  font-family: var(--sans);
+}
+
+.regime-type-trigger {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 14px;
+  background: rgba(248, 249, 250, 0.70);
+  color: var(--ink);
+  box-shadow:
+    0 10px 30px rgba(14, 20, 36, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(22px) saturate(155%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%);
+  text-align: left;
+}
+
+.regime-type-trigger:hover {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.regime-type-trigger:focus-visible {
+  outline: 3px solid rgba(65, 102, 166, 0.24);
+  outline-offset: 2px;
+}
+
+.regime-type-swatch {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--type-color, #4a5878);
+  box-shadow:
+    inset 0 0 0 1px rgba(14, 20, 36, 0.10),
+    0 0 0 1px rgba(255, 255, 255, 0.65);
+}
+
+.regime-type-trigger-copy {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 1px;
+}
+
+.regime-type-trigger-copy small {
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.regime-type-trigger-copy strong {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.regime-type-chevron {
+  color: var(--subtle);
+  font-size: 15px;
+  transition: transform 0.18s ease;
+}
+
+#regime-type-control[data-open="true"] .regime-type-chevron {
+  transform: rotate(180deg);
+}
+
+.regime-type-glass {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  max-height: min(58vh, 470px);
+  padding: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: 22px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.76),
+    rgba(244, 245, 249, 0.56)
+  );
+  box-shadow:
+    0 24px 70px rgba(14, 20, 36, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(30px) saturate(170%);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  transform-origin: top left;
+  animation: regime-glass-in 0.18s ease-out;
+}
+
+.regime-type-glass[hidden] {
+  display: none;
+}
+
+.regime-type-list {
+  max-height: min(54vh, 438px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 88, 120, 0.35) transparent;
+  padding: 2px;
+}
+
+.regime-type-option {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.regime-type-option:hover,
+.regime-type-option[aria-selected="true"] {
+  background: color-mix(
+    in srgb,
+    var(--type-color, #4a5878) 13%,
+    rgba(255, 255, 255, 0.70)
+  );
+  box-shadow: inset 0 0 0 1px color-mix(
+    in srgb,
+    var(--type-color, #4a5878) 22%,
+    transparent
+  );
+}
+
+.regime-type-option span:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.regime-type-count {
+  flex: 0 0 auto;
+  color: var(--subtle);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes regime-glass-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+
+
+  .regime-type-glass {
+    max-height: min(62vh, 430px);
+  }
+
+  .regime-type-list {
+    max-height: min(58vh, 398px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .regime-type-glass {
+    animation: none;
+  }
+
+  .regime-type-chevron {
+    transition: none;
+  }
+}

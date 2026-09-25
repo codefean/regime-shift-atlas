@@ -45,6 +45,179 @@
 
   const SELECTED_COLUMNS = [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS];
 
+  // Canonical regime-shift taxonomy used across the atlas.
+  const REGIME_SHIFT_TYPES = Object.freeze([
+    { label: 'Arctic benthos borealisation', color: '#0e1424', aliases: [] },
+    { label: 'Arctic sea ice loss', color: '#1d3759', aliases: ['Arctic sea-ice loss', 'Arctic seaice loss'] },
+    { label: 'Bivalves collapse', color: '#4a5878', aliases: ['Bivalve collapse'] },
+    { label: 'Bush encroachment', color: '#6b6074', aliases: [] },
+    { label: 'Common pool resource harvesting', color: '#8a626b', aliases: [] },
+    { label: 'Coniferous to deciduous forest', color: '#b06965', aliases: [] },
+    { label: 'Coral transitions', color: '#d87f67', aliases: ['Coral transition'] },
+    { label: 'Fisheries collapse', color: '#dea580', aliases: ['Fishery collapse'] },
+    { label: 'Forest to savanna', color: '#e2c8a5', aliases: [] },
+    { label: 'Freshwater eutrophication', color: '#fcf5de', aliases: [] },
+    { label: 'Greenland ice sheet collapse', color: '#240e3c', aliases: [] },
+    { label: 'Hypoxia', color: '#3d305c', aliases: [] },
+    { label: 'Indian summer monsoon', color: '#544e76', aliases: ['Moonson', 'Monsoon', 'Indian monsoon'] },
+    { label: 'Kelp transitions', color: '#6e6288', aliases: ['Kelps transitions', 'Kelp transition'] },
+    { label: 'Marine eutrophication', color: '#8f668c', aliases: [] },
+    { label: 'Marine food webs', color: '#b36c8e', aliases: ['Marine foodwebs', 'Marine food web', 'Marine foodweb'] },
+    { label: 'Peatland transitions', color: '#ca88a8', aliases: ['Tropical Peatland Transitions', 'Peatland transition'] },
+    { label: 'Primary productivity in the Arctic ocean', color: '#d7a9c6', aliases: ['Primary production arctic ocean', 'Primary productivity arctic ocean', 'Primary production in the Arctic ocean'] },
+    { label: 'River channel change', color: '#e4cfe3', aliases: [] },
+    { label: 'Salt marshes to tidal flats', color: '#0d1626', aliases: ['Salt marsh to tidal flat', 'Salt marsh to tidal flats'] },
+    { label: 'Seagrass transitions', color: '#1e315a', aliases: ['Seagrass transition'] },
+    { label: 'Sprawling versus compact cities', color: '#2d5988', aliases: ['Sprawling vs compact city', 'Sprawling vs compact cities', 'Sprawling versus compact city'] },
+    { label: 'Steppe to tundra', color: '#3e708c', aliases: [] },
+    { label: 'Submerged to floating plants', color: '#4d8084', aliases: [] },
+    { label: 'Thermohaline circulation (AMOC)', color: '#5d907a', aliases: ['Thermohaline circulation', 'AMOC', 'Atlantic meridional overturning circulation'] },
+    { label: 'Thermokarst lakes', color: '#76a76f', aliases: ['Thermokarst lake'] },
+    { label: 'Tundra to boreal forest', color: '#a3c979', aliases: ['Tundra to forest'] },
+    { label: 'West Antarctic ice sheet collapse', color: '#dbe6ad', aliases: ['West antarctic ice sheet collapse'] },
+    { label: 'Pollination collapse', color: '#151245', aliases: [] },
+    { label: 'Fire regimes', color: '#29326b', aliases: ['Fire regime'] },
+    { label: 'Soil productivity', color: '#355090', aliases: ['Soil primary productivity'] },
+    { label: 'Terrestrial community shifts', color: '#4f6e9b', aliases: ['Terrestrial community shift'] },
+    { label: 'Freshwater salinization', color: '#698296', aliases: ['Water/Estuary Salinization', 'Water estuary salinization'] },
+    { label: 'River delta accretion and recession', color: '#81978e', aliases: ['River delta accretion recession'] },
+    { label: 'Forest die-offs', color: '#9eab89', aliases: ['Forest die-off', 'Forest die off', 'Forest die offs'] },
+    { label: 'Dryland degradation (or desertification)', color: '#cbcfa4', aliases: ['Dryland degradation', 'Desertification'] },
+    { label: 'Carbon sink to carbon source transition', color: '#324e80', aliases: ['Carbon sink to carbon source', 'Carbon source transition'] }
+  ]);
+
+  function normalizeRegimeType(value) {
+    return String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/&/g, ' and ')
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/[-_/]+/g, ' ')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  const REGIME_ALIAS_LOOKUP = (() => {
+    const map = new Map();
+    for (const entry of REGIME_SHIFT_TYPES) {
+      for (const value of [entry.label, ...(entry.aliases || [])]) {
+        const key = normalizeRegimeType(value);
+        if (key) map.set(key, entry.label);
+      }
+    }
+    return map;
+  })();
+
+  function editDistance(left, right) {
+    const a = String(left || '');
+    const b = String(right || '');
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+    const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+    const current = new Array(b.length + 1);
+
+    for (let i = 1; i <= a.length; i += 1) {
+      current[0] = i;
+      for (let j = 1; j <= b.length; j += 1) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        current[j] = Math.min(
+          current[j - 1] + 1,
+          previous[j] + 1,
+          previous[j - 1] + cost
+        );
+      }
+      for (let j = 0; j <= b.length; j += 1) previous[j] = current[j];
+    }
+
+    return previous[b.length];
+  }
+
+  function fuzzyRegimeMatch(value) {
+    const candidate = normalizeRegimeType(value);
+    if (candidate.length < 6) return '';
+
+    let bestLabel = '';
+    let bestScore = 0;
+
+    for (const entry of REGIME_SHIFT_TYPES) {
+      for (const alias of [entry.label, ...(entry.aliases || [])]) {
+        const normalizedAlias = normalizeRegimeType(alias);
+        const longest = Math.max(candidate.length, normalizedAlias.length);
+        if (!longest) continue;
+        const score = 1 - (editDistance(candidate, normalizedAlias) / longest);
+        if (score > bestScore) {
+          bestScore = score;
+          bestLabel = entry.label;
+        }
+      }
+    }
+
+    // Aliases handle known renames; fuzzy matching only covers minor text differences.
+    return bestScore >= 0.90 ? bestLabel : '';
+  }
+
+  function terrestrialContext(context = {}) {
+    const ecosystem = normalizeRegimeType(
+      context.ecosystem_type || context.ecosystem || context.ecosystemType || ''
+    );
+    return /(forest|grassland|dryland|desert|savanna|cropland|agricultur|tundra|peatland|terrestrial)/.test(ecosystem);
+  }
+
+  function matchRegimeCandidate(value, context = {}) {
+    const normalized = normalizeRegimeType(value);
+    if (!normalized || normalized === 'na' || normalized === 'unclassified' || normalized === 'unspecified') return '';
+
+    // Only treat a generic community shift as terrestrial when the record supports it.
+    if (normalized === 'community shift' || normalized === 'species ecology shift') {
+      return terrestrialContext(context) ? 'Terrestrial community shifts' : '';
+    }
+
+    return REGIME_ALIAS_LOOKUP.get(normalized) || fuzzyRegimeMatch(value);
+  }
+
+  function canonicalRegimeType(rawType, otherType, context = {}) {
+    const raw = cleanText(rawType);
+    const other = cleanText(otherType);
+    const rawNormalized = normalizeRegimeType(raw);
+
+    if (raw && rawNormalized !== 'unclassified') {
+      const direct = matchRegimeCandidate(raw, context);
+      if (direct) return direct;
+    }
+
+    if (other) {
+      const fromOther = matchRegimeCandidate(other, context);
+      if (fromOther) return fromOther;
+    }
+
+    return '';
+  }
+
+  function regimeTypeKey(value) {
+    return normalizeRegimeType(value);
+  }
+
+  function regimeTypeColor(value) {
+    const normalized = normalizeRegimeType(value);
+    const entry = REGIME_SHIFT_TYPES.find(item => normalizeRegimeType(item.label) === normalized);
+    return entry?.color || '#4a5878';
+  }
+
+  function classifyRegimeRecord(record = {}) {
+    const canonicalType = canonicalRegimeType(
+      record.type,
+      record.regime_shift_type_other ?? record.typeOther,
+      record
+    );
+    return canonicalType ? {
+      ...record,
+      canonicalType,
+      regime_type: canonicalType
+    } : null;
+  }
+
   function cleanText(value) {
     const text = String(value ?? '').trim();
     return text.toUpperCase() === 'NA' ? '' : text;
@@ -132,7 +305,7 @@
           records.push({
             id,
             name: cleanText(value('case_study_name')) || `Regime shift ${id}`,
-            type,
+            type: canonicalRegimeType(rawType, otherType, { ecosystem_type: value('ecosystem_type') }) || type,
             summary: cleanText(value('summary')),
             ecosystem: cleanText(value('ecosystem_type')),
             landUses: cleanText(value('land_uses')),
@@ -233,6 +406,7 @@
           id: point.id,
           name: point.name,
           type: point.type,
+          regime_type: point.type,
           case_study_name: point.name,
           regime_shift_type_other: point.type === 'Unclassified' ? point.type : '',
           long: point.longitude,
@@ -406,6 +580,10 @@
   }
 
   window.RegimeData = Object.freeze({
+    REGIME_SHIFT_TYPES,
+    canonicalRegimeType,
+    regimeTypeColor,
+    regimeTypeKey,
     allCountryCodes,
     cleanCode,
     countryBoundaryFeatures,

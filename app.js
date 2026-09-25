@@ -34,10 +34,10 @@
   );
 
   const defaultStyle = {
-    color: '#6f8177',
+    color: '#7d939b',
     weight: 0.7,
     opacity: 0.9,
-    fillColor: '#d7e6dc',
+    fillColor: '#dce8eb',
     fillOpacity: 0.17
   };
 
@@ -51,11 +51,11 @@
   };
 
   const hoverStyle = {
-    color: '#234f3b',
+    color: '#163944',
     weight: 1.6,
     opacity: 1,
-    fillColor: '#2f6b4f',
-    fillOpacity: 0.38
+    fillColor: '#2f6f86',
+    fillOpacity: 0.25
   };
 
   const map = L.map('map', {
@@ -159,7 +159,7 @@
   }).addTo(map);
 
   map.createPane('regimePointsPane');
-  map.getPane('regimePointsPane').style.zIndex = '450';
+  map.getPane('regimePointsPane').style.zIndex = '550';
   map.getPane('regimePointsPane').style.pointerEvents = 'none';
 
   map.createPane('countryBoundaryPane');
@@ -519,16 +519,39 @@ function onEachCountry(feature, layer) {
           pane: 'regimePointsPane',
           renderer,
           interactive: false,
-          radius: 2.6,
-          color: '#234f3b',
-          weight: 0.6,
-          opacity: 0.8,
-          fillColor: '#2f6b4f',
-          fillOpacity: 0.72
+          radius: 4,
+          color: '#ffffff',
+          weight: 0.9,
+          opacity: 0.95,
+          fillColor: window.RegimeData.regimeTypeColor(feature.properties.regime_type),
+          fillOpacity: 0.9
         });
       }
     }).addTo(map);
 
+    const knownTypes = new Map(window.RegimeData.REGIME_SHIFT_TYPES.map(entry => [
+      window.RegimeData.regimeTypeKey(entry.label), entry
+    ]));
+    for (const feature of geojson.features) {
+      const label = feature.properties.regime_type;
+      const key = window.RegimeData.regimeTypeKey(label);
+      if (!knownTypes.has(key)) knownTypes.set(key, {
+        label, color: window.RegimeData.regimeTypeColor(label)
+      });
+    }
+    window.RegimeTypeSelector.init({
+      root: '#regime-type-control',
+      geojson,
+      types: [...knownTypes.values()],
+      getKey: window.RegimeData.regimeTypeKey,
+      getColor: window.RegimeData.regimeTypeColor,
+      notifyOnInit: false,
+      onChange(selection) {
+        regimePointsLayer.clearLayers();
+        regimePointsLayer.addData(selection.geojson);
+        statusElement.textContent = `${selection.label}: ${selection.count.toLocaleString()} mapped records`;
+      }
+    });
     return dataset.metadata;
   }
 

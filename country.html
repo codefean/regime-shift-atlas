@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Country profile and regime-shift analysis workspace.">
-  <title>Country · Regime Shift Atlas</title>
+  <meta name="description" content="Country profile and mapped regime-shift analysis.">
+  <title>Country · Regime Shifts Atlas</title>
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="preconnect" href="https://tile.openstreetmap.org">
   <link
@@ -13,18 +13,19 @@
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   >
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="shared.css">
+  <link rel="stylesheet" href="country.css">
 </head>
 <body class="country-page">
   <header class="site-header">
-    <a class="brand" href="index.html" aria-label="Regime Shift Atlas home">
+    <a class="brand" href="index.html" aria-label="Regime Shifts Atlas home">
       <span>
-        <strong>Regime Shift Atlas</strong>
+        <strong>Regime Shifts Atlas</strong>
         <small>Explore Ecosystem Change by Country</small>
       </span>
     </a>
     <nav class="site-nav" aria-label="Primary navigation">
-      <a href="index.html#world-map">
+      <a href="index.html">
         <span class="nav-label-full">World map</span><span class="nav-label-short" aria-hidden="true">Map</span>
       </a>
       <a id="country-rsdb-home-link" href="../../index.html">RSDB home</a>
@@ -33,7 +34,7 @@
 
   <main>
     <section class="country-identity" aria-labelledby="country-name">
-      <a class="back-link" href="index.html#world-map" aria-label="Return to the world map">← World map</a>
+      <a class="back-link" href="index.html" aria-label="Return to the world map">← World map</a>
 
       <div class="identity-grid">
         <div class="flag-frame" id="flag-frame">
@@ -70,9 +71,9 @@
       </div>
     </section>
 
-<div class="article-layout">
-  <aside class="article-sidebar" aria-label="Page contents">
-    <div class="contents-card">
+    <div class="article-layout">
+      <aside class="article-sidebar" aria-label="Page contents">
+        <div class="contents-card">
       <p class="contents-title">Contents</p>
       <a href="#overview">Overview</a>
       <a href="#types">Shift Types</a>
@@ -82,8 +83,8 @@
       <a href="#evidence">Evidence</a>
       <a href="#case-studies">Case studies</a>
       <a href="#references">References</a>
-    </div>
-  </aside>
+        </div>
+      </aside>
 
       <article class="country-article">
         <section id="overview" class="article-section">
@@ -97,9 +98,9 @@
           <div class="intro-note">
             <p id="overview-copy">Loading country and regime-shift data…</p>
           </div>
-                    <div id="analysis-grid" class="analysis-grid" aria-live="polite"></div>
+          <div id="analysis-grid" class="analysis-grid" aria-live="polite"></div>
 
-          <section class="country-map-panel">
+          <div class="country-map-panel">
 
             <div class="country-map-mobile-tools">
               <button id="country-map-interaction-toggle" class="map-interaction-toggle" type="button" aria-pressed="false" hidden>Explore map</button>
@@ -110,9 +111,7 @@
               <span class="country-map-key"><span class="country-map-key-dot" aria-hidden="true"></span><strong id="country-map-point-count">0</strong> mapped case studies</span>
               <span>Hover a point to see its case study name. Tap a point on touch devices.</span>
             </div>
-          </section>
-
-
+          </div>
 
         </section>
 
@@ -227,15 +226,12 @@
           </aside>
         </section>
 
-        
-
         <section id="references" class="article-section references-section">
-        
           <h2>References</h2>
           <ol>
             <li>Regime-shift records and descriptive fields: Regime Shift Database, loaded directly from the CSV at page load.</li>
             <li>Country assignment: point-in-polygon calculation against Marine Regions, Marine and land zones Version 4 (2024), created from World EEZ Version 12.</li>
-            <li>Country profile attributes: Natural Earth, 1:110m Admin 0 Countries.</li>
+            <li>Country profile attributes: World Bank data when available, with Natural Earth 1:110m Admin 0 Countries as a fallback.</li>
             <li>Flag images: Flagcdn, generated from available ISO alpha-2 country codes.</li>
           </ol>
           <p class="reference-note">The boundary layer is a reference visualization and should not be treated as a legally authoritative boundary source. Joint or overlapping sovereign footprints can assign one record to more than one country.</p>
@@ -245,7 +241,7 @@
   </main>
 
   <footer class="site-footer">
-    <span>Regime Shift Atlas prototype</span>
+    <span>Regime Shifts Atlas</span>
     <span id="footer-country-name">Country reference page</span>
   </footer>
 
